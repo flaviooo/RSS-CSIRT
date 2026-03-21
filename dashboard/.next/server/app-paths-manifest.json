@@ -1,0 +1,6 @@
+{
+  "/api/alerts/route": "app/api/alerts/route.js",
+  "/api/stats/route": "app/api/stats/route.js",
+  "/dashboard/alerts/page": "app/dashboard/alerts/page.js",
+  "/dashboard/page": "app/dashboard/page.js"
+}

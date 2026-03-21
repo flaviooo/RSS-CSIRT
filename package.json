@@ -1,0 +1,39 @@
+{
+  "name": "cve-openfetch-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot for CVE OpenFetch",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx test/functions.test.ts",
+    "fetch-cve": "tsx scripts/fetch-cve.ts"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "node-telegram-bot-api",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@types/nodemailer": "^7.0.11",
+    "axios": "^1.13.6",
+    "dotenv": "^16.4.5",
+    "mongoose": "^9.3.1",
+    "node-cron": "^4.2.1",
+    "node-telegram-bot-api": "^0.66.0",
+    "nodemailer": "^8.0.3",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/node-telegram-bot-api": "^0.64.14",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
