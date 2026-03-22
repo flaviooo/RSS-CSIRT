@@ -268,11 +268,17 @@
   .grid {
     display: grid;
   }
+  .h-40 {
+    height: calc(var(--spacing) * 40);
+  }
   .h-64 {
     height: calc(var(--spacing) * 64);
   }
   .max-h-\[80vh\] {
     max-height: 80vh;
+  }
+  .max-h-\[90vh\] {
+    max-height: 90vh;
   }
   .min-h-screen {
     min-height: 100vh;

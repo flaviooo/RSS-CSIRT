@@ -6,6 +6,14 @@ import type { IAlert } from "@/lib/types";
 type SortColumn = "severity" | "title" | "pubDate" | "updatedAt" | "sentViaEmail";
 type SortDirection = "asc" | "desc";
 
+interface IssueFormData {
+  subject: string;
+  description: string;
+  project: string;
+  tracker: string;
+  priority: string;
+}
+
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<IAlert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,6 +25,15 @@ export default function AlertsPage() {
   const [expandedAlert, setExpandedAlert] = useState<IAlert | null>(null);
   const [sortColumn, setSortColumn] = useState<SortColumn>("pubDate");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [createIssueAlert, setCreateIssueAlert] = useState<IAlert | null>(null);
+  const [issueForm, setIssueForm] = useState<IssueFormData>({
+    subject: "",
+    description: "",
+    project: "",
+    tracker: "",
+    priority: "",
+  });
+  const [creatingIssue, setCreatingIssue] = useState(false);
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -159,6 +176,46 @@ export default function AlertsPage() {
     } catch {
       alert("Errore durante l'eliminazione");
     }
+  };
+
+  const openCreateIssueModal = (alert: IAlert) => {
+    const description = `CVE Alert: ${alert.title}\n\nSeverity: ${alert.severity.toUpperCase()}\n\nDescription:\n${alert.description || "N/A"}\n\nLink: ${alert.link || "N/A"}\n\nCVEs: ${alert.cveIds?.join(", ") || "N/A"}`;
+    
+    setIssueForm({
+      subject: alert.title,
+      description: description,
+      project: process.env.NEXT_PUBLIC_DEFAULT_PROJECT || "analisi-di-sicurezza-sistemi-asi",
+      tracker: process.env.NEXT_PUBLIC_DEFAULT_TRACKER || "Richiesta di supporto",
+      priority: "",
+    });
+    setCreateIssueAlert(alert);
+  };
+
+  const handleCreateIssue = async () => {
+    if (!issueForm.subject || !issueForm.description) {
+      alert("Subject e Description sono obbligatori");
+      return;
+    }
+
+    setCreatingIssue(true);
+    try {
+      const res = await fetch("/api/issues", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(issueForm),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert(`✅ Issue creata con successo!\n\nID: ${data.issueId}\nURL: ${data.issueUrl}`);
+        setCreateIssueAlert(null);
+      } else {
+        alert(`❌ Errore: ${data.error}`);
+      }
+    } catch {
+      alert("❌ Errore nella creazione della issue");
+    }
+    setCreatingIssue(false);
   };
 
   const severityColors: Record<string, string> = {
@@ -380,8 +437,16 @@ export default function AlertsPage() {
                       <button
                         onClick={() => sendSingleEmail(alert._id)}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+                        title="Invia email"
                       >
                         📧
+                      </button>
+                      <button
+                        onClick={() => openCreateIssueModal(alert)}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
+                        title="Crea issue Redmine"
+                      >
+                        📝
                       </button>
                       <button
                         onClick={() => deleteAlert(alert._id, alert.title)}
@@ -476,6 +541,98 @@ export default function AlertsPage() {
                   {expandedAlert.sentViaEmail && (
                     <span className="text-green-400 text-sm">✅ Email sent</span>
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {createIssueAlert && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg border border-gray-600 max-w-2xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold text-white pr-4">Crea Issue Redmine</h2>
+                <button
+                  onClick={() => setCreateIssueAlert(null)}
+                  className="text-gray-400 hover:text-white text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-gray-400 text-sm mb-1 block">Subject *</label>
+                  <input
+                    type="text"
+                    value={issueForm.subject}
+                    onChange={(e) => setIssueForm({ ...issueForm, subject: e.target.value })}
+                    className="w-full bg-gray-700 text-white px-4 py-2 rounded border border-gray-600"
+                    placeholder="Titolo della issue"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-gray-400 text-sm mb-1 block">Description *</label>
+                  <textarea
+                    value={issueForm.description}
+                    onChange={(e) => setIssueForm({ ...issueForm, description: e.target.value })}
+                    className="w-full bg-gray-700 text-white px-4 py-2 rounded border border-gray-600 h-40"
+                    placeholder="Descrizione della issue"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-gray-400 text-sm mb-1 block">Project</label>
+                    <input
+                      type="text"
+                      value={issueForm.project}
+                      onChange={(e) => setIssueForm({ ...issueForm, project: e.target.value })}
+                      className="w-full bg-gray-700 text-white px-4 py-2 rounded border border-gray-600"
+                      placeholder="Nome progetto (opzionale)"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-gray-400 text-sm mb-1 block">Tracker</label>
+                    <input
+                      type="text"
+                      value={issueForm.tracker}
+                      onChange={(e) => setIssueForm({ ...issueForm, tracker: e.target.value })}
+                      className="w-full bg-gray-700 text-white px-4 py-2 rounded border border-gray-600"
+                      placeholder="Es. Richiesta di supporto"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-gray-400 text-sm mb-1 block">Priority</label>
+                  <input
+                    type="text"
+                    value={issueForm.priority}
+                    onChange={(e) => setIssueForm({ ...issueForm, priority: e.target.value })}
+                    className="w-full bg-gray-700 text-white px-4 py-2 rounded border border-gray-600"
+                    placeholder="Es. Alta, Normale, Bassa (opzionale)"
+                  />
+                </div>
+
+                <div className="flex gap-4 pt-4 border-t border-gray-700">
+                  <button
+                    onClick={handleCreateIssue}
+                    disabled={creatingIssue}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded disabled:opacity-50 flex-1"
+                  >
+                    {creatingIssue ? "Creazione..." : "Crea Issue"}
+                  </button>
+                  <button
+                    onClick={() => setCreateIssueAlert(null)}
+                    className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded"
+                  >
+                    Annulla
+                  </button>
                 </div>
               </div>
             </div>
