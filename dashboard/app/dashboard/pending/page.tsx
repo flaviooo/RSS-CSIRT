@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { IPendingAlert, PendingAlertStatus } from "@/lib/types";
 
 export default function PendingPage() {
@@ -13,7 +13,7 @@ export default function PendingPage() {
   const [expandedAlert, setExpandedAlert] = useState<IPendingAlert | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
 
-  const fetchAlerts = async () => {
+  const fetchAlerts = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -36,11 +36,11 @@ export default function PendingPage() {
       setAlerts([]);
     }
     setLoading(false);
-  };
+  }, [status, severity, search, cveSearch]);
 
   useEffect(() => {
     fetchAlerts();
-  }, [status, severity, search, cveSearch]);
+  }, [fetchAlerts]);
 
   const handleAction = async (id: string, action: "reject" | "approve" | "send-email") => {
     setProcessing(id);

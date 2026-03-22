@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { IAlert } from "@/lib/types";
 
 type SortColumn = "severity" | "title" | "pubDate" | "updatedAt" | "sentViaEmail";
@@ -78,7 +78,7 @@ export default function AlertsPage() {
     return <span className="ml-1 text-blue-400">{sortDirection === "asc" ? "↑" : "↓"}</span>;
   };
 
-  const fetchAlerts = async () => {
+  const fetchAlerts = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -100,11 +100,11 @@ export default function AlertsPage() {
       setAlerts([]);
     }
     setLoading(false);
-  };
+  }, [severity, search, cveSearch]);
 
   useEffect(() => {
     fetchAlerts();
-  }, [severity, search, cveSearch]);
+  }, [fetchAlerts]);
 
   const searchByCve = (cveId: string) => {
     setCveSearch(cveId);

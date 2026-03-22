@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { IEmailLog } from "@/lib/types";
 
 export default function EmailLogsPage() {
@@ -10,7 +10,7 @@ export default function EmailLogsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -25,11 +25,11 @@ export default function EmailLogsPage() {
       console.error("Failed to fetch logs");
     }
     setLoading(false);
-  };
+  }, [status, page]);
 
   useEffect(() => {
     fetchLogs();
-  }, [status, page]);
+  }, [fetchLogs]);
 
   return (
     <div>
