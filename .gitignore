@@ -5,7 +5,7 @@
 
 # Dependencies
 node_modules/
-
+.next/
 # Build output
 dist/
 build/
