@@ -10,18 +10,20 @@
 
 ### Bot (root directory)
 ```bash
-npm run dev          # Run bot in development mode
-npm run build        # Compile TypeScript to JavaScript (dist/)
-npm run typecheck    # Type-check without emitting
-npm start            # Run compiled JavaScript from dist/
-npm test             # Run all tests
+npm run dev            # Run bot in development mode
+npm run build          # Compile TypeScript to JavaScript (dist/)
+npm run typecheck      # Type-check without emitting
+npm start              # Run compiled JavaScript from dist/
+npm test               # Run all tests
 TEST=extractCveIds npm test   # Filter tests by name (case-insensitive)
+npm run fetch-cve      # Run CVE fetch script manually
 ```
 
 ### Dashboard
 ```bash
-cd dashboard && npm run dev   # Run dashboard (port 3000)
+cd dashboard && npm run dev    # Run dashboard (port 3000)
 cd dashboard && npm run build  # Build for production
+cd dashboard && npm run start  # Run production server
 cd dashboard && npm run lint   # Run ESLint
 ```
 
@@ -35,12 +37,26 @@ cd dashboard && npm run lint   # Run ESLint
 
 ### Imports (ESM Required)
 ```typescript
-// ✓ Correct - include .js extension for ESM
+// ✓ Correct - include .js extension for ESM (Bot only!)
 import { fetchAlerts } from './services/rssService.js';
 // ✗ Wrong - missing .js extension
 import { fetchAlerts } from './services/rssService';
 ```
 **Order:** external packages → internal modules
+
+> ⚠️ **ATTENZIONE:** L'estensione `.js` è richiesta **SOLO** per il bot (ESM NodeNext).
+> **NON** usare `.js` nei file della dashboard - causerebbe errori di runtime!
+
+### Imports Dashboard (Next.js)
+```typescript
+// ✓ Corretto - senza estensione .js
+import { NextResponse } from "next/server";
+import mongoose from "mongoose";
+import axios from "axios";
+
+// ✓ Usa path alias se necessario
+import type { DashboardStats } from "@/lib/types";
+```
 
 ### Naming Conventions
 | Type | Convention | Example |
