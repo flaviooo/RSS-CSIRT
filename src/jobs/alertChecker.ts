@@ -134,7 +134,7 @@ export function startAlertChecker(bot: TelegramBot): void {
   console.log('Starting alert checker with 30-minute interval...');
   
   // Schedule: ogni 30 minuti (*/30 * * * *)
-  cron.schedule('*/30 * * * *', async () => {
+  cron.schedule('*/15 * * * *', async () => {
     await checkForNewAlerts(bot);
   });
 
