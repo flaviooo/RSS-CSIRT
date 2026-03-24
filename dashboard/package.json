@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "pm2Start":"pm2 start node_modules/next/dist/bin/next --name \"RSS-CSIRT\" -- start -p 3006 --time -o log/out.log -e log/err.log"  
-    
+    "pm2Start":"pm2 start node_modules/next/dist/bin/next --name \"RSS-CSIRT\" --time -o log/DashboardtOut.log -e log/DashboardErr.log"  
+
   },
   "dependencies": {
     "axios": "^1.7.9",

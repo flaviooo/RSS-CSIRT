@@ -10,7 +10,8 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "tsx test/functions.test.ts",
-    "fetch-cve": "tsx scripts/fetch-cve.ts"
+    "fetch-cve": "tsx scripts/fetch-cve.ts",
+    "pm2Start":"pm2 start dist/index.js --name BOT --time -o log/BotOut.log -e log/BotErr.log"  
   },
   "keywords": [
     "telegram",
