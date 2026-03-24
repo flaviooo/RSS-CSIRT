@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
       hmrRefreshes: false,
     },
   },
+  allowedDevOrigins: ['controllo1.csea.local'],
 };
 
 export default nextConfig;

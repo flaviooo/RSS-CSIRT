@@ -24,11 +24,15 @@ export default function EmailLogsPage() {
         return;
       }
       
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      
       const data = await res.json();
       setLogs(data.logs);
       setTotalPages(data.pagination.pages);
-    } catch {
-      console.error("Failed to fetch logs");
+    } catch (err) {
+      console.error("Failed to fetch logs:", err);
     }
     setLoading(false);
   }, [status, page]);

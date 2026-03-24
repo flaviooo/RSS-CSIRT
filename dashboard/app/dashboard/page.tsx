@@ -14,6 +14,9 @@ export default function DashboardPage() {
           window.location.href = "/login";
           return null;
         }
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
         return res.json();
       })
       .then((data) => {
@@ -22,7 +25,10 @@ export default function DashboardPage() {
         }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        console.error("Stats fetch error:", err);
+        setLoading(false);
+      });
   }, []);
 
   if (loading) {
