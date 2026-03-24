@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
+import { isAuthenticated } from "@/lib/auth";
 
 const PendingAlertSchema = new mongoose.Schema({
   rssId: String,
@@ -21,6 +22,10 @@ const PendingAlertSchema = new mongoose.Schema({
 const PendingAlert = mongoose.models.PendingAlert || mongoose.model("PendingAlert", PendingAlertSchema);
 
 export async function GET(request: Request) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");

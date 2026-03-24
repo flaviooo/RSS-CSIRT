@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { createIssue } from "@/lib/redmine";
+import { isAuthenticated } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
 

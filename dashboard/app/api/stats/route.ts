@@ -27,7 +27,14 @@ const EmailLogSchema = new mongoose.Schema({
 const Alert = mongoose.models.Alert || mongoose.model("Alert", AlertSchema);
 const EmailLog = mongoose.models.EmailLog || mongoose.model("EmailLog", EmailLogSchema);
 
-export async function GET() {
+export async function GET(request: Request) {
+  const authHeader = request.headers.get('cookie');
+  const isAuthenticated = authHeader?.includes('auth=true');
+
+  if (!isAuthenticated) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/cve-bot");
 
