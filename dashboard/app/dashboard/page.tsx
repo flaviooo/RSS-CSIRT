@@ -9,9 +9,17 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetch("/api/stats")
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 401) {
+          window.location.href = "/login";
+          return null;
+        }
+        return res.json();
+      })
       .then((data) => {
-        setStats(data);
+        if (data) {
+          setStats(data);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));

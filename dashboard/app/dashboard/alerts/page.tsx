@@ -87,6 +87,12 @@ export default function AlertsPage() {
       if (cveSearch) params.set("cve", cveSearch.toUpperCase());
       
       const res = await fetch(`/api/alerts?${params}`);
+      
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+      
       const data = await res.json();
       
       if (data.error) {

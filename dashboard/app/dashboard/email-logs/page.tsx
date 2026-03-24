@@ -18,6 +18,12 @@ export default function EmailLogsPage() {
       if (status !== "all") params.set("status", status);
       
       const res = await fetch(`/api/email-logs?${params}`);
+      
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+      
       const data = await res.json();
       setLogs(data.logs);
       setTotalPages(data.pagination.pages);

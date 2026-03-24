@@ -23,6 +23,12 @@ export default function PendingPage() {
       if (cveSearch) params.set("cve", cveSearch.toUpperCase());
       
       const res = await fetch(`/api/pending-alerts?${params}`);
+      
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+      
       const data = await res.json();
       
       if (data.error) {
@@ -50,6 +56,12 @@ export default function PendingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
+      
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+      
       const data = await res.json();
       
       if (data.success) {
@@ -76,6 +88,12 @@ export default function PendingPage() {
     setProcessing(id);
     try {
       const res = await fetch(`/api/pending-alerts/${id}`, { method: "DELETE" });
+      
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+      
       const data = await res.json();
       
       if (data.success) {
