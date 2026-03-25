@@ -1,3 +1,5 @@
+require('dotenv').config({ path: '.env' });
+
 module.exports = {
   apps: [
     {
@@ -5,7 +7,7 @@ module.exports = {
       script: 'node_modules/next/dist/bin/next', // Percorso al binario di Next.js
       args: 'start', // Comando per avviare Next.js in produzione
       env: {
-        PORT: 3006, // Porta su cui l'app sarà in ascolto
+        PORT: process.env.PORT || 3000,
         NODE_ENV: 'production' // Ambiente di produzione
       },
       out_file: 'log/out.log', // Log di output

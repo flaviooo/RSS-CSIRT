@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import type { DashboardStats } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -16,6 +18,10 @@ export default function DashboardPage() {
         }
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
+        }
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Invalid response content type");
         }
         return res.json();
       })

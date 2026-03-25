@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { IEmailLog } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export default function EmailLogsPage() {
   const [logs, setLogs] = useState<IEmailLog[]>([]);
   const [loading, setLoading] = useState(true);

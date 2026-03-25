@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { IAlert } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 type SortColumn = "severity" | "title" | "pubDate" | "updatedAt" | "sentViaEmail";
 type SortDirection = "asc" | "desc";
 

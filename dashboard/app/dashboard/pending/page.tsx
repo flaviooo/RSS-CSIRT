@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { IPendingAlert, PendingAlertStatus } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export default function PendingPage() {
   const [alerts, setAlerts] = useState<IPendingAlert[]>([]);
   const [loading, setLoading] = useState(true);
