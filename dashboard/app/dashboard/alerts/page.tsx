@@ -28,6 +28,9 @@ export default function AlertsPage() {
   const [sortColumn, setSortColumn] = useState<SortColumn>("pubDate");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [createIssueAlert, setCreateIssueAlert] = useState<IAlert | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [issueForm, setIssueForm] = useState<IssueFormData>({
     subject: "",
     description: "",
@@ -87,6 +90,8 @@ export default function AlertsPage() {
       if (severity !== "all") params.set("severity", severity);
       if (search) params.set("search", search);
       if (cveSearch) params.set("cve", cveSearch.toUpperCase());
+      params.set("page", page.toString());
+      params.set("limit", limit.toString());
       
       const res = await fetch(`/api/alerts?${params}`);
       
@@ -106,13 +111,16 @@ export default function AlertsPage() {
         setAlerts([]);
       } else {
         setAlerts(data.alerts || []);
+        if (data.pagination) {
+          setTotalPages(data.pagination.pages);
+        }
       }
     } catch {
       console.error("Failed to fetch alerts");
       setAlerts([]);
     }
     setLoading(false);
-  }, [severity, search, cveSearch]);
+  }, [severity, search, cveSearch, page, limit]);
 
   useEffect(() => {
     fetchAlerts();
@@ -120,6 +128,7 @@ export default function AlertsPage() {
 
   const searchByCve = (cveId: string) => {
     setCveSearch(cveId);
+    setPage(1);
   };
 
   const toggleSelect = (id: string) => {
@@ -246,7 +255,10 @@ export default function AlertsPage() {
         <div className="flex gap-4 items-center flex-wrap">
           <select
             value={severity}
-            onChange={(e) => setSeverity(e.target.value)}
+            onChange={(e) => {
+              setSeverity(e.target.value);
+              setPage(1);
+            }}
             className="bg-gray-700 text-white px-4 py-2 rounded border border-gray-600"
           >
             <option value="all">All Severities</option>
@@ -475,6 +487,62 @@ export default function AlertsPage() {
           </table>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-gray-400 text-sm">Show:</span>
+            <select
+              value={limit}
+              onChange={(e) => {
+                setLimit(Number(e.target.value));
+                setPage(1);
+              }}
+              className="bg-gray-700 text-white px-2 py-1 rounded border border-gray-600 text-sm"
+            >
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+            <span className="text-gray-400 text-sm">per page</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(1)}
+              disabled={page === 1}
+              className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ««
+            </button>
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              «
+            </button>
+            <span className="text-white px-3">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              »
+            </button>
+            <button
+              onClick={() => setPage(totalPages)}
+              disabled={page === totalPages}
+              className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              »»
+            </button>
+          </div>
+        </div>
+      )}
 
       {expandedAlert && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
