@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "pm2Start": "pm2 start npm  --name \"BOT\"-- run start --time -o log/DashboardtOut.log -e log/DashboardErr.log"
+    "pm2Start": "pm2 start npm  --name \"Dashboar\"-- run start --time -o ../log/DashboardtOut.log -e ../log/DashboardErr.log"
   },
   "dependencies": {
     "axios": "^1.7.9",
