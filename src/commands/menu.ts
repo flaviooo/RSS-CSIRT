@@ -64,15 +64,30 @@ export function registerMenuCommand(bot: TelegramBot): void {
 
     if (!text) return;
 
-    // 🔔 Latest Alerts - Mostra gli ultimi 5 alert dal feed RSS
+    // 🔔 Latest Alerts - Mostra gli ultimi 5 alert da MongoDB
     if (text === '🔔 Latest Alerts') {
-      const { fetchAlerts, formatAlertMessage } = await import('../services/rssService.js');
-      const alerts = await fetchAlerts();
+      const { connectDB } = await import('../config/database.js');
+      const { Alert } = await import('../models/Alert.js');
+      await connectDB();
+      const alerts = await Alert.find({}).sort({ pubDate: -1 }).limit(5);
       if (alerts.length === 0) {
-        bot.sendMessage(chatId, 'No alerts found.');
+        bot.sendMessage(chatId, 'No alerts found in database.');
       } else {
-        for (const alert of alerts.slice(0, 5)) {
-          bot.sendMessage(chatId, formatAlertMessage(alert), { parse_mode: 'Markdown' });
+        const severityEmoji: Record<string, string> = {
+          critical: '🔴', high: '🟠', medium: '🟡', low: '🟢', unknown: '⚪',
+        };
+        for (const alert of alerts) {
+          const emoji = severityEmoji[alert.severity || 'unknown'];
+          const severityLabel = (alert.severity || 'unknown').toUpperCase();
+          const date = new Date(alert.pubDate).toLocaleString('it-IT');
+          let message = `${emoji} **${severityLabel}**\n\n`;
+          message += `📌 ${alert.title}\n`;
+          message += `⏰ ${date}\n`;
+          if (alert.cveIds && alert.cveIds.length > 0) {
+            message += `🔢 CVEs: ${alert.cveIds.join(', ')}\n`;
+          }
+          message += `\n🔗 ${alert.link}`;
+          bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
           await new Promise((resolve) => setTimeout(resolve, 400));
         }
       }
@@ -81,12 +96,13 @@ export function registerMenuCommand(bot: TelegramBot): void {
     } else if (text === '🔇 Unsubscribe') {
       bot.sendMessage(chatId, 'Use /unsubscribe to stop receiving CVE alerts.');
     } else if (text === '📅 Last Check') {
-      // 📅 Last Check - Mostra quando è stata eseguita l'ultima verifica
-      const { getLastChecked } = await import('../services/stateService.js');
-      const lastChecked = getLastChecked();
-      const response = lastChecked
-        ? `📅 Last check: ${new Date(lastChecked).toLocaleString()}`
-        : 'No check has been performed yet.';
+      const { connectDB } = await import('../config/database.js');
+      const { Alert } = await import('../models/Alert.js');
+      await connectDB();
+      const latestAlert = await Alert.findOne({}).sort({ receivedAt: -1 });
+      const response = latestAlert
+        ? `📅 Last alert received: ${new Date(latestAlert.receivedAt).toLocaleString()}`
+        : 'No alerts in database yet.';
       bot.sendMessage(chatId, response);
     } else if (text === '📊 My Stats') {
       // 📊 My Stats - Mostra statistiche personali dell'utente
@@ -244,21 +260,11 @@ export function registerMenuCommand(bot: TelegramBot): void {
       };
       bot.sendMessage(chatId, menuMessage, options);
     } else if (text === '📧 Send Email') {
-      bot.sendMessage(chatId, '📧 Sending latest alerts via email...');
-      const { fetchAlerts } = await import('../services/rssService.js');
-      const { sendAlertEmail } = await import('../services/emailService.js');
-      const alerts = await fetchAlerts();
-      if (alerts.length === 0) {
-        bot.sendMessage(chatId, 'No alerts to send.');
-      } else {
-        let sentCount = 0;
-        for (const alert of alerts.slice(0, 5)) {
-          const success = await sendAlertEmail(alert);
-          if (success) sentCount++;
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        }
-        bot.sendMessage(chatId, `✅ Email inviata con ${sentCount} alert(s)!`);
-      }
+      bot.sendMessage(
+        chatId, 
+        '📧 La funzionalità di invio email è stata spostata sulla Dashboard.\n\n' +
+        'Puoi inviare email dalla dashboard: ' + (process.env.DASHBOARD_URL || 'http://localhost:3006')
+      );
     } else if (text === '❓ Help') {
       bot.sendMessage(chatId, 'Use /help for the full command list.');
     }

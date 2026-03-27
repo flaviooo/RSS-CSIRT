@@ -25,8 +25,8 @@ Available Commands:
 📧 Notifications:
 /subscribe - Subscribe to alert notifications
 /unsubscribe - Stop receiving notifications
-/sendemail - Send latest alerts via email
-/sendmaillastmsg - Send last alert via email
+/sendemail - Email via Dashboard
+/sendmaillastmsg - Email via Dashboard
 
 🔧 Utility:
 /echo [text] - Echo your message back
