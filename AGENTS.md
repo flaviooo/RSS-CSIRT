@@ -10,13 +10,14 @@
 
 ### Bot (root directory)
 ```bash
-npm run dev            # Run bot in development mode
+npm run dev            # Run bot in development mode (tsx watch)
 npm run build          # Compile TypeScript to JavaScript (dist/)
 npm run typecheck      # Type-check without emitting
-npm start              # Run compiled JavaScript from dist/
+npm run start          # Run compiled JavaScript from dist/
 npm test               # Run all tests
-TEST=extractCveIds npm test   # Filter tests by name (case-insensitive)
+TEST=extractCveIds npm test   # Run single test by name (case-insensitive)
 npm run fetch-cve      # Run CVE fetch script manually
+npm run lint          # Run ESLint (if configured)
 ```
 
 ### Dashboard
@@ -37,26 +38,16 @@ cd dashboard && npm run lint   # Run ESLint
 
 ### Imports (ESM Required)
 ```typescript
-// ✓ Correct - include .js extension for ESM (Bot only!)
+// Bot - include .js extension for ESM
 import { fetchAlerts } from './services/rssService.js';
-// ✗ Wrong - missing .js extension
-import { fetchAlerts } from './services/rssService';
-```
-**Order:** external packages → internal modules
+import axios from 'axios';
 
-> ⚠️ **ATTENZIONE:** L'estensione `.js` è richiesta **SOLO** per il bot (ESM NodeNext).
-> **NON** usare `.js` nei file della dashboard - causerebbe errori di runtime!
-
-### Imports Dashboard (Next.js)
-```typescript
-// ✓ Corretto - senza estensione .js
+// Dashboard - NO .js extension (Next.js)
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
-import axios from "axios";
-
-// ✓ Usa path alias se necessario
 import type { DashboardStats } from "@/lib/types";
 ```
+**Order:** external packages → internal modules
 
 ### Naming Conventions
 | Type | Convention | Example |
@@ -70,6 +61,7 @@ import type { DashboardStats } from "@/lib/types";
 - Use **explicit return types** for exported functions
 - Prefer **interfaces** for object shapes, **type aliases** for unions
 - Avoid `any` - use `unknown` with type guards instead
+- Use `strict: true` in tsconfig
 
 ### Error Handling
 ```typescript
@@ -86,7 +78,6 @@ if (!requiredVar) {
 
 ### Mongoose Schema Pattern
 ```typescript
-// Safe model export (prevents HMR issues)
 export const Alert = mongoose.models.Alert || mongoose.model<IAlert>('Alert', AlertSchema);
 ```
 
@@ -110,65 +101,74 @@ function test(name: string, fn: () => void) {
 }
 ```
 
----
-
-## Telegram Bot Commands
-
-`/start`, `/help`, `/menu`, `/alerts`, `/lastcheck`, `/subscribe`, `/unsubscribe`, `/sendemail`, `/sendmaillastmsg`, `/stats`, `/cve <CVE-ID>`, `/echo [text]`
+Run specific test: `TEST=extractCveIds npm test`
 
 ---
 
-## Reference
+## Architecture
 
-### Architecture
 ```
-src/                    # Telegram Bot
+src/                    # Telegram Bot (ESM)
 ├── config/             # MongoDB connection
 ├── models/             # Mongoose schemas (Alert, PendingAlert, User, EmailLog)
 ├── commands/           # Telegram command handlers
 ├── listeners/          # Telegram event listeners
-├── services/           # Email, RSS services (rssService, rssPendingService)
-├── jobs/               # Alert checker cron jobs
+├── services/           # Email, RSS services
+├── jobs/               # Cron jobs (alertChecker, pendingAlertChecker)
 └── types/              # TypeScript interfaces
 
-dashboard/              # Next.js Dashboard
-├── app/api/            # REST API endpoints (alerts, pending-alerts, email-logs, stats)
-├── app/dashboard/      # Stats, alerts, pending, email logs pages
-└── app/login/          # Admin login
+dashboard/              # Next.js 15 Dashboard
+├── app/api/            # REST API endpoints
+├── app/dashboard/      # Protected dashboard pages
+└── app/login/          # Admin authentication
 ```
 
-### Cron Jobs
-- **alertChecker:** Every 30 minutes - automatic notifications
-- **pendingAlertChecker:** Every 15 minutes - moderation workflow (commented by default)
+### MongoDB Collections
+- **alerts:** rssId, title, link, pubDate, severity, cveIds, sentViaEmail, sentViaTelegram
+- **pendingAlerts:** same + status (pending/approved/outofftopic/sent), evaluatedAt, evaluatedBy
+- **users:** chatId, username, subscribed
+- **emailLogs:** alertId, alertTitle, recipient, status (success/failed), error
+
+---
+
+## Cron Jobs
+- **alertChecker:** Every 30 minutes - automatic CVE notifications
+- **pendingAlertChecker:** Every 15 minutes - moderation workflow (disabled by default)
 - **Protection:** `isRunning` flag prevents concurrent executions
 
-### MongoDB Collections
-- **alerts:** rssId, title, link, pubDate, updatedAt, severity, cveIds, description, sentViaEmail, sentViaTelegram
-- **pendingAlerts:** rssId, title, link, pubDate, severity, cveIds, status (pending/approved/outofftopic/sent), sentViaEmail
-- **users:** chatId, username, subscribed
-- **emailLogs:** alertId, alertTitle, recipient, status, error
+---
 
-### Pending Alerts Workflow (Moderation)
-Alternative system for manual approval of RSS feeds:
-1. RSS feed fetched and saved with `status: pending`
-2. Dashboard at `/dashboard/pending` shows alerts to evaluate
-3. Actions available:
-   - 📧 **Invia Mail**: Sends email and logs to EmailLog, sets `status: sent`
-   - 🚫 **Cancella**: Sets `status: outofftopic`
-4. Approved alerts auto-sent to Telegram subscribers (if pendingAlertChecker enabled)
+## Telegram Bot Commands
+`/start`, `/help`, `/menu`, `/alerts`, `/lastcheck`, `/subscribe`, `/unsubscribe`, `/sendemail`, `/sendmaillastmsg`, `/stats`, `/cve <CVE-ID>`, `/echo [text]`
 
-### Environment Variables
-**Bot (.env):** `BOT_TOKEN`, `MONGODB_URI`, `MAIL_GMAIL_USER`, `MAIL_GMAIL_TOKEN`
-**Dashboard (.env):** `MONGODB_URI`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`
+---
 
-### Starting the Application
+## Environment Variables
+
+### Bot (.env)
+```
+BOT_TOKEN, MONGODB_URI, MAIL_GMAIL_USER, MAIL_GMAIL_TOKEN
+```
+
+### Dashboard (dashboard/.env)
+```
+MONGODB_URI, ADMIN_EMAIL, ADMIN_PASSWORD
+REDMINE_URL, REDMINE_API_KEY
+IMAP_HOST, IMAP_PORT, IMAP_USER, IMAP_PASSWORD
+```
+
+---
+
+## Starting the Application
 ```bash
 npm run dev                    # Terminal 1: Bot
 cd dashboard && npm run dev    # Terminal 2: Dashboard
 ```
-Dashboard: `http://localhost:3000/login`
+Dashboard login: `http://localhost:3000/login`
 
-### External References
+---
+
+## External References
 - Telegram Bot API: https://core.telegram.org/bots/api
 - Mongoose Docs: https://mongoosejs.com/docs/
-- Node-cron: https://www.npmjs.com/package/node-cron
+- Next.js Docs: https://nextjs.org/docs

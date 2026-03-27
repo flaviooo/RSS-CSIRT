@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx test/functions.test.ts",
     "fetch-cve": "tsx scripts/fetch-cve.ts",
-    "pm2Start":"pm2 start dist/index.js --name BOT --time -o log/BotOut.log -e log/BotErr.log"  
+    "pm2Start":"pm2 start npm --name BOT -- run start --time -o log/BotOut.log -e log/BotErr.log"  
   },
   "keywords": [
     "telegram",
