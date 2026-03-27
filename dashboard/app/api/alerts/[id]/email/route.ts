@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import { isAuthenticated } from "@/lib/auth";
+import { connectDB } from "@/lib/mongodb";
 
 const AlertSchema = new mongoose.Schema({
   rssId: String,
@@ -39,7 +40,7 @@ export async function POST(
 
   try {
     const { id } = await params;
-    await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/cve-bot");
+    await connectDB();
 
     const alert = await Alert.findById(id);
     if (!alert) {

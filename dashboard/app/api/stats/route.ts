@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
+import { connectDB } from "@/lib/mongodb";
 
 const AlertSchema = new mongoose.Schema({
   rssId: String,
@@ -36,7 +37,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/cve-bot");
+    await connectDB();
 
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

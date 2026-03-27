@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { isAuthenticated } from "@/lib/auth";
+import { connectDB } from "@/lib/mongodb";
 
 const PendingAlertSchema = new mongoose.Schema({
   rssId: String,
@@ -44,7 +45,7 @@ export async function POST(
     const { id } = await params;
     const { action } = await request.json();
     
-    await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/cve-bot");
+    await connectDB();
 
     const alert = await PendingAlert.findById(id);
     
@@ -149,7 +150,7 @@ export async function GET(
   try {
     const { id } = await params;
     
-    await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/cve-bot");
+    await connectDB();
 
     const alert = await PendingAlert.findById(id).lean();
     
@@ -175,7 +176,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     
-    await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/cve-bot");
+    await connectDB();
 
     const alert = await PendingAlert.findByIdAndDelete(id);
     

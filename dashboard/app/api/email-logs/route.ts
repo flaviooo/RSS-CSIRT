@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { isAuthenticated } from "@/lib/auth";
+import { connectDB } from "@/lib/mongodb";
 
 const EmailLogSchema = new mongoose.Schema({
   alertId: String,
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
 
-    await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/cve-bot");
+    await connectDB();
 
     const query: Record<string, unknown> = {};
     if (status && status !== "all") {
