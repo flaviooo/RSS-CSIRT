@@ -52,6 +52,19 @@ export interface IUser {
   createdAt: Date;
 }
 
+export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'unknown';
+
+export interface RSSAlert {
+  id: string;
+  title: string;
+  link: string;
+  pubDate: string;
+  description: string;
+  severity?: Severity;
+  cveIds: string[];
+  updatedAt?: string;
+}
+
 export interface DashboardStats {
   totalAlerts: number;
   totalEmailsSent: number;

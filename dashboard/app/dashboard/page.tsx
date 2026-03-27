@@ -5,51 +5,68 @@ import type { DashboardStats } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+interface CronStatus {
+  isRunning: boolean;
+  lastRun: string | null;
+  nextRun: string | null;
+  newAlerts: number;
+  emailsSent: number;
+  error: string | null;
+  intervalMinutes: number;
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [cronStatus, setCronStatus] = useState<CronStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/stats")
-      .then((res) => {
+    Promise.all([
+      fetch("/api/stats").then((res) => {
         if (res.status === 401) {
           window.location.href = "/login";
           return null;
         }
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Invalid response content type");
+        return res.json();
+      }),
+      fetch("/api/cron/status").then((res) => {
+        if (res.status === 401) {
+          window.location.href = "/login";
+          return null;
         }
         return res.json();
-      })
-      .then((data) => {
-        if (data) {
-          setStats(data);
-        }
+      }),
+    ])
+      .then(([statsData, cronData]) => {
+        if (statsData) setStats(statsData);
+        if (cronData) setCronStatus(cronData);
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Stats fetch error:", err);
+        console.error("Fetch error:", err);
         setLoading(false);
       });
   }, []);
+
+  const getTimeRemaining = () => {
+    if (!cronStatus?.nextRun) return "-";
+    const now = new Date();
+    const next = new Date(cronStatus.nextRun);
+    const diff = next.getTime() - now.getTime();
+    if (diff < 0) return "0 min";
+    const mins = Math.floor(diff / 60000);
+    return `${mins} min`;
+  };
+
+  const getLastRunFormatted = () => {
+    if (!cronStatus?.lastRun) return "Never";
+    return new Date(cronStatus.lastRun).toLocaleString("it-IT");
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!stats || 'error' in stats) {
-    const errorMessage = stats && 'error' in stats ? (stats as { error: string }).error : 'Unknown error';
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-red-400 text-xl">Error loading stats: {errorMessage}</div>
       </div>
     );
   }
@@ -66,6 +83,44 @@ export default function DashboardPage() {
     <div>
       <h1 className="text-3xl font-bold text-white mb-8">Dashboard</h1>
 
+      {/* Cron Status */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">⏰ Cron Job Status</h2>
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  cronStatus?.isRunning ? "bg-yellow-500 animate-pulse" : "bg-green-500"
+                }`}
+              ></div>
+              <p className="text-white font-medium">
+                {cronStatus?.isRunning ? "Running..." : "Active"}
+              </p>
+            </div>
+          </div>
+          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+            <p className="text-gray-400 text-sm">Next run in</p>
+            <p className="text-2xl font-bold text-white mt-1">{getTimeRemaining()}</p>
+          </div>
+          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+            <p className="text-gray-400 text-sm">Last run</p>
+            <p className="text-lg font-bold text-white mt-1">{getLastRunFormatted()}</p>
+          </div>
+          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+            <p className="text-gray-400 text-sm">Last result</p>
+            <p className="text-lg font-bold text-white mt-1">
+              {cronStatus?.newAlerts || 0} new, {cronStatus?.emailsSent || 0} email
+            </p>
+          </div>
+        </div>
+        {cronStatus?.error && (
+          <div className="mt-4 bg-red-900/50 border border-red-700 rounded p-3">
+            <p className="text-red-400 text-sm">Error: {cronStatus.error}</p>
+          </div>
+        )}
+      </div>
+
       {/* Email Stats */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-white mb-4">📧 Email Statistics</h2>
@@ -73,19 +128,19 @@ export default function DashboardPage() {
           <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
             <p className="text-gray-400 text-sm">Total Emails Sent</p>
             <p className="text-3xl font-bold text-blue-400 mt-2">
-              {stats.totalEmailsSent}
+              {stats?.totalEmailsSent || 0}
             </p>
           </div>
           <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
             <p className="text-gray-400 text-sm">Last 7 Days</p>
             <p className="text-3xl font-bold text-green-400 mt-2">
-              {stats.emailsSentLast7Days}
+              {stats?.emailsSentLast7Days || 0}
             </p>
           </div>
           <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
             <p className="text-gray-400 text-sm">Last 30 Days</p>
             <p className="text-3xl font-bold text-purple-400 mt-2">
-              {stats.emailsSentLast30Days}
+              {stats?.emailsSentLast30Days || 0}
             </p>
           </div>
         </div>
@@ -95,7 +150,7 @@ export default function DashboardPage() {
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-white mb-4">🔔 Alert Statistics</h2>
         <div className="grid grid-cols-5 gap-4 mb-6">
-          {Object.entries(stats.alertsBySeverity).map(([severity, count]) => (
+          {Object.entries(stats?.alertsBySeverity || {}).map(([severity, count]) => (
             <div
               key={severity}
               className={`${severityColors[severity]} p-4 rounded-lg text-center`}
@@ -108,7 +163,7 @@ export default function DashboardPage() {
         <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
           <p className="text-gray-400 text-sm">Total Alerts</p>
           <p className="text-3xl font-bold text-white mt-2">
-            {stats.totalAlerts}
+            {stats?.totalAlerts || 0}
           </p>
         </div>
       </div>
@@ -117,7 +172,7 @@ export default function DashboardPage() {
       <div>
         <h2 className="text-xl font-semibold text-white mb-4">📋 Recent Alerts</h2>
         <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-          {stats.recentAlerts.length === 0 ? (
+          {(!stats?.recentAlerts || stats.recentAlerts.length === 0) ? (
             <p className="p-4 text-gray-400">No alerts yet</p>
           ) : (
             <table className="w-full">
