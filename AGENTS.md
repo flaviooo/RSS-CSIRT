@@ -10,14 +10,13 @@
 
 ### Bot (root directory)
 ```bash
-npm run dev            # Run bot in development mode (tsx watch)
-npm run build          # Compile TypeScript to JavaScript (dist/)
-npm run typecheck      # Type-check without emitting
-npm run start          # Run compiled JavaScript from dist/
-npm test               # Run all tests
+npm run dev              # Run bot in development mode (tsx watch)
+npm run build            # Compile TypeScript to JavaScript (dist/)
+npm run typecheck        # Type-check without emitting
+npm run start            # Run compiled JavaScript from dist/
+npm test                 # Run all tests
 TEST=extractCveIds npm test   # Run single test by name (case-insensitive)
-npm run fetch-cve      # Run CVE fetch script manually
-npm run lint          # Run ESLint (if configured)
+npm run fetch-cve        # Run CVE fetch script manually
 ```
 
 ### Dashboard
@@ -26,6 +25,16 @@ cd dashboard && npm run dev    # Run dashboard (port 3000)
 cd dashboard && npm run build  # Build for production
 cd dashboard && npm run start  # Run production server
 cd dashboard && npm run lint   # Run ESLint
+```
+
+### PM2 (Production)
+```bash
+npm run pm2Start           # Start bot with PM2
+cd dashboard && npm run pm2Start  # Start dashboard
+pm2 status                # Show PM2 processes
+pm2 stop all              # Stop all processes
+pm2 restart all           # Restart all processes
+pm2 logs                  # View logs
 ```
 
 ---
@@ -44,7 +53,6 @@ import axios from 'axios';
 
 // Dashboard - NO .js extension (Next.js)
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
 import type { DashboardStats } from "@/lib/types";
 ```
 **Order:** external packages → internal modules
@@ -81,6 +89,13 @@ if (!requiredVar) {
 export const Alert = mongoose.models.Alert || mongoose.model<IAlert>('Alert', AlertSchema);
 ```
 
+### Cookie Security (Dashboard)
+```typescript
+// Use COOKIE_SECURE env var to control secure flag
+secure: process.env.COOKIE_SECURE === "true",
+```
+Set `COOKIE_SECURE=false` in dashboard/.env for HTTP, `true` for HTTPS
+
 ### Security Best Practices
 - Never expose or log secrets and keys
 - Never commit credentials to the repository
@@ -90,7 +105,7 @@ export const Alert = mongoose.models.Alert || mongoose.model<IAlert>('Alert', Al
 
 ## Testing Framework
 
-Tests use a custom lightweight runner (no external test framework).
+Custom lightweight runner (no external framework):
 
 ```typescript
 const RUN_TEST = process.env.TEST;
@@ -110,30 +125,30 @@ Run specific test: `TEST=extractCveIds npm test`
 ```
 src/                    # Telegram Bot (ESM)
 ├── config/             # MongoDB connection
-├── models/             # Mongoose schemas (Alert, PendingAlert, User, EmailLog)
+├── models/             # Mongoose schemas
 ├── commands/           # Telegram command handlers
 ├── listeners/          # Telegram event listeners
 ├── services/           # Email, RSS services
-├── jobs/               # Cron jobs (alertChecker, pendingAlertChecker)
+├── jobs/               # Cron jobs
 └── types/              # TypeScript interfaces
 
 dashboard/              # Next.js 15 Dashboard
 ├── app/api/            # REST API endpoints
-├── app/dashboard/      # Protected dashboard pages
+├── app/dashboard/      # Protected pages
 └── app/login/          # Admin authentication
 ```
 
 ### MongoDB Collections
 - **alerts:** rssId, title, link, pubDate, severity, cveIds, sentViaEmail, sentViaTelegram
-- **pendingAlerts:** same + status (pending/approved/outofftopic/sent), evaluatedAt, evaluatedBy
+- **pendingAlerts:** same + status, evaluatedAt, evaluatedBy
 - **users:** chatId, username, subscribed
-- **emailLogs:** alertId, alertTitle, recipient, status (success/failed), error
+- **emailLogs:** alertId, alertTitle, recipient, status, error
 
 ---
 
 ## Cron Jobs
 - **alertChecker:** Every 30 minutes - automatic CVE notifications
-- **pendingAlertChecker:** Every 15 minutes - moderation workflow (disabled by default)
+- **pendingAlertChecker:** Every 15 minutes - moderation (disabled by default)
 - **Protection:** `isRunning` flag prevents concurrent executions
 
 ---
@@ -153,18 +168,9 @@ BOT_TOKEN, MONGODB_URI, MAIL_GMAIL_USER, MAIL_GMAIL_TOKEN
 ### Dashboard (dashboard/.env)
 ```
 MONGODB_URI, ADMIN_EMAIL, ADMIN_PASSWORD
-REDMINE_URL, REDMINE_API_KEY
-IMAP_HOST, IMAP_PORT, IMAP_USER, IMAP_PASSWORD
+COOKIE_SECURE=false  # Set true for HTTPS
+PORT=3006
 ```
-
----
-
-## Starting the Application
-```bash
-npm run dev                    # Terminal 1: Bot
-cd dashboard && npm run dev    # Terminal 2: Dashboard
-```
-Dashboard login: `http://localhost:3000/login`
 
 ---
 
