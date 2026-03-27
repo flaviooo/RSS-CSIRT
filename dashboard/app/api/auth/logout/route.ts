@@ -5,6 +5,8 @@ export async function POST() {
   
   response.cookies.set("auth", "", {
     httpOnly: true,
+    secure: process.env.COOKIE_SECURE === "true",
+    sameSite: "lax",
     expires: new Date(0),
   });
 
